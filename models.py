@@ -91,8 +91,8 @@ class DistributedMixin(UndeleteMixin):
     """
     Assigns a UUID to each record, uses the UUID as natural key.
     """
-    uuid                      = models.CharField(max_length=32,       null=False, editable=False, unique=True,  db_index=True)
-    uuid_source               = models.ForeignKey('DistributedSource',null=True,  editable=False, related_name='+')
+    uuid                      = models.CharField(max_length=32,       null=False, editable=False, db_index=True)
+    distributed_source        = models.ForeignKey('DistributedSource',null=True,  editable=False, related_name='+')
     date_created              = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Created at'))
     date_modified             = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Modified at'))
 
