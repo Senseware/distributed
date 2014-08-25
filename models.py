@@ -1,5 +1,8 @@
+import requests
 import uuid
+from django.conf import settings
 from django.db import models
+from django.db.models import Max
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 
@@ -137,14 +140,41 @@ class DistributedSource(models.Model):
 
     def save(self, *args, **kwargs):
         super(DistributedSource, self).save(*args, **kwargs)
+        self.sync()
+
+    def request(self, extra_url=None):
+        url = self.api_url
+        if extra_url:
+            if url[-1] != '/': url += '/'
+            url += extra_url
+        return requests.get(url, auth=(self.api_username, self.api_password))
 
     def sync(self):
-        for model in self.models.filter(active=True):
+        # published resources
+        response = self.request()
+        if not response.ok:
+            self.last_sync = timezone.now()
+            self.last_sync_message = '%d' % response.status_code
+            super(DistributedSource, self).save()
+            return
+        data = response.json()
+        order = self.models.all().aggregate(Max('order'))['order__max'] or 0
+        for resource in data.keys():
+            if not self.models.filter(api_url=resource).exists():
+                order += 1
+                DistributedSourceModel.objects.create(
+                    source = self,
+                    resource_name = resource,
+                    api_url = resource,
+                    order = order,
+                )
+        # sync
+        for model in self.models.filter(active=True).order_by('order'):
             model.sync()
         # done
         self.last_sync = timezone.now()
         self.last_sync_message = 'Success'
-        self.save()
+        super(DistributedSource, self).save()
 
 
 
@@ -153,21 +183,55 @@ class DistributedSourceModel(models.Model):
     A model that must be synced from the source
     """
     source                    = models.ForeignKey(DistributedSource,  null=False, blank=False,    related_name='models')
-    model_class               = models.CharField(max_length=50,       null=False, blank=False)
+    resource_name             = models.CharField(max_length=50,       null=False, blank=False)
     api_url                   = models.CharField(max_length=200,      null=True,  blank=True)
     active                    = models.BooleanField(                  null=False, blank=False,    default=True)
+    order                     = models.PositiveSmallIntegerField(     null=False, blank=False,    default=0)
     last_sync                 = models.DateTimeField(                 null=True,  editable=False)
     last_sync_message         = models.CharField(max_length=200,      null=True,  editable=False)
 
+    class Meta:
+        ordering = ('order',)
+
     def __unicode__(self):
-        return self.model_class
+        return '%s: %s' % (self.source, self.resource_name)
 
     def save(self, *args, **kwargs):
         if not self.api_url:
             self.api_url = self.model_class.lowercase()
         super(DistributedSourceModel, self).save(*args, **kwargs)
-    
+
+    def get_model_class(self):
+        path = settings.DISTRIBUTED_MODELS.get(self.resource_name, None)
+        if not path:
+            return None
+        path = path.split('.')
+        module = '.'.join(path[:-1])
+        return models.get_model(module, path[-1])
+        
+    def get_list(self):
+        response = self.source.request(self.api_url)
+        if not response.ok:
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError, e:
+                raise requests.exceptions.HTTPError('%s (%s)' % (e.message, self))
+        data = response.json()
+        return data
+
     def sync(self):
+        # model
+        cls = self.get_model_class()
+        if not cls:
+            self.last_sync = timezone.now()
+            self.last_sync_message = 'Failed - model not defined in settings.DISTRIBUTED_MODELS'
+            self.save()
+            return
+        # list
+        object_list = self.get_list()
+        for obj in object_list:
+            if cls.objects.filter(uuid=obj['uuid']):
+                raise 'bla'
         # done
         self.last_sync = timezone.now()
         self.last_sync_message = 'Success'

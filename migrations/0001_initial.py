@@ -26,9 +26,10 @@ class Migration(SchemaMigration):
         db.create_table(u'distributed_distributedsourcemodel', (
             (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('source', self.gf('django.db.models.fields.related.ForeignKey')(related_name='models', to=orm['distributed.DistributedSource'])),
-            ('model_class', self.gf('django.db.models.fields.CharField')(max_length=50)),
+            ('resource_name', self.gf('django.db.models.fields.CharField')(max_length=50)),
             ('api_url', self.gf('django.db.models.fields.CharField')(max_length=200, null=True, blank=True)),
             ('active', self.gf('django.db.models.fields.BooleanField')(default=True)),
+            ('order', self.gf('django.db.models.fields.PositiveSmallIntegerField')(default=0)),
             ('last_sync', self.gf('django.db.models.fields.DateTimeField')(null=True)),
             ('last_sync_message', self.gf('django.db.models.fields.CharField')(max_length=200, null=True)),
         ))
@@ -57,13 +58,14 @@ class Migration(SchemaMigration):
             'notes': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'})
         },
         u'distributed.distributedsourcemodel': {
-            'Meta': {'object_name': 'DistributedSourceModel'},
+            'Meta': {'ordering': "('order',)", 'object_name': 'DistributedSourceModel'},
             'active': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'api_url': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True', 'blank': 'True'}),
             u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'last_sync': ('django.db.models.fields.DateTimeField', [], {'null': 'True'}),
             'last_sync_message': ('django.db.models.fields.CharField', [], {'max_length': '200', 'null': 'True'}),
-            'model_class': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
+            'order': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '0'}),
+            'resource_name': ('django.db.models.fields.CharField', [], {'max_length': '50'}),
             'source': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'models'", 'to': u"orm['distributed.DistributedSource']"})
         }
     }

@@ -6,7 +6,7 @@ from distributed.models import DistributedSource, DistributedSourceModel
 
 class DistributedSourceModelInline(admin.TabularInline):
     model = DistributedSourceModel
-    fields = ('model_class', 'api_url', 'active', 'last_sync', 'last_sync_message')
+    fields = ('resource_name', 'api_url', 'order', 'active', 'last_sync', 'last_sync_message')
     readonly_fields = ('last_sync','last_sync_message',)
     extra = 0
 
