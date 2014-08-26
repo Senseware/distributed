@@ -1,10 +1,16 @@
 import requests
 import uuid
+import pytz
 from django.conf import settings
 from django.db import models
 from django.db.models import Max
+from django.db.models.fields import DateTimeField
+from django.db.models.fields.related import ForeignKey
 from django.utils import timezone
+from django.utils.dateparse import parse_date, parse_datetime, parse_time
 from django.utils.translation import ugettext_lazy as _
+
+from distributed.utils import unserialize_json
 
 
 
@@ -140,7 +146,6 @@ class DistributedSource(models.Model):
 
     def save(self, *args, **kwargs):
         super(DistributedSource, self).save(*args, **kwargs)
-        self.sync()
 
     def request(self, extra_url=None):
         url = self.api_url
@@ -210,6 +215,7 @@ class DistributedSourceModel(models.Model):
         return models.get_model(module, path[-1])
         
     def get_list(self):
+        data = []
         response = self.source.request(self.api_url)
         if not response.ok:
             try:
@@ -229,9 +235,18 @@ class DistributedSourceModel(models.Model):
             return
         # list
         object_list = self.get_list()
-        for obj in object_list:
-            if cls.objects.filter(uuid=obj['uuid']):
-                raise 'bla'
+        for rec in object_list:
+            rec = unserialize_json(rec, cls)
+            if not cls.objects.filter(uuid=rec['uuid']).exists():
+                obj = cls(uuid=rec['uuid'])
+                obj.distributed_source = self.source
+            else:
+                obj = cls.objects.get(uuid=rec['uuid'])
+            # all fields
+            if (not obj.date_modified) or (obj.date_modified < rec['date_modified']):
+                for key in rec.keys():
+                    setattr(obj, key, rec[key])
+                obj.save()
         # done
         self.last_sync = timezone.now()
         self.last_sync_message = 'Success'
