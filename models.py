@@ -185,7 +185,7 @@ class DistributedSourceModel(models.Model):
     source                    = models.ForeignKey(DistributedSource,  null=False, blank=False,    related_name='models')
     resource_name             = models.CharField(max_length=50,       null=False, blank=False)
     api_url                   = models.CharField(max_length=200,      null=True,  blank=True)
-    active                    = models.BooleanField(                  null=False, blank=False,    default=True)
+    active                    = models.BooleanField(                  null=False, blank=False,    default=False)
     order                     = models.PositiveSmallIntegerField(     null=False, blank=False,    default=0)
     last_sync                 = models.DateTimeField(                 null=True,  editable=False)
     last_sync_message         = models.CharField(max_length=200,      null=True,  editable=False)
