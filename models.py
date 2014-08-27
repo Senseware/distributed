@@ -46,8 +46,7 @@ class UndeleteManager(models.Manager):
 
 class UndeleteMixin(models.Model):
     """ Changes delete actions to only set the deleted flag, retrieve querysets accordingly """
-    deleted                   = models.BooleanField(                  null=False, editable=False, default=False)
-    date_deleted              = models.DateTimeField(                 null=True,  editable=False, verbose_name=_('Deleted at'))
+    date_deleted              = models.DateTimeField(                 null=True,  editable=False, db_index=True, verbose_name=_('Deleted at'))
 
     objects = UndeleteManager()
 
@@ -68,7 +67,6 @@ class UndeleteMixin(models.Model):
                 obj.delete(timestamp=timestamp)
         # delete
         self.date_deleted = timestamp
-        self.deleted = True
         self.save()
 
     def undelete(self):
@@ -85,7 +83,6 @@ class UndeleteMixin(models.Model):
                 obj.undelete()
         # undelete
         self.date_deleted = None
-        self.deleted = False
         self.save()
 
 
@@ -100,12 +97,10 @@ class DistributedMixin(UndeleteMixin):
     """
     Assigns a UUID to each record, uses the UUID as natural key.
     """
-    uuid                      = models.CharField(max_length=32,       null=False, editable=False, db_index=True)
-    distributed_source        = models.ForeignKey('DistributedSource',null=True,  editable=False, related_name='+')
+    uuid                      = models.CharField(max_length=32,       null=False, editable=False, db_index=True,    verbose_name='UUID')
+    distributed_source        = models.ForeignKey('DistributedSource',null=True,  editable=False, related_name='+', verbose_name='UUID Source')
     date_created              = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Created at'))
     date_modified             = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Modified at'))
-
-    #data_sets                 = models.ManyToManyField('DistributedDataSet',  null=True, blank=True)
 
     objects = DistributedManager()
 
@@ -233,23 +228,29 @@ class DistributedSourceModel(models.Model):
             self.last_sync_message = 'Failed - model not defined in settings.DISTRIBUTED_MODELS'
             self.save()
             return
-        # list
-        object_list = self.get_list()
-        for rec in object_list:
-            rec = unserialize_json(rec, cls)
-            if not cls.objects.filter(uuid=rec['uuid']).exists():
-                obj = cls(uuid=rec['uuid'])
-                obj.distributed_source = self.source
-            else:
-                obj = cls.objects.get(uuid=rec['uuid'])
-            # all fields
-            if (not obj.date_modified) or (obj.date_modified < rec['date_modified']):
-                for key in rec.keys():
-                    setattr(obj, key, rec[key])
-                obj.save()
-        # done
-        self.last_sync = timezone.now()
-        self.last_sync_message = 'Success'
+        try:
+            # list
+            object_list = self.get_list()
+            for rec in object_list:
+                rec = unserialize_json(rec, cls)
+                if not cls.objects.all_with_deleted().filter(uuid=rec['uuid']).exists():
+                    obj = cls(uuid=rec['uuid'])
+                    obj.distributed_source = self.source
+                    yyy = 'xxxxxxxxxxxxxxxxxxx'
+                else:
+                    obj = cls.objects.get(uuid=rec['uuid'])
+                # all fields
+                if (not obj.date_modified) or (obj.date_modified < rec['date_modified']):
+                    for key in rec.keys():
+                        setattr(obj, key, rec[key])
+                    xxx = obj.id
+                    obj.save()
+            # done
+            self.last_sync = timezone.now()
+            self.last_sync_message = 'Success'
+        except Exception, e:
+            self.last_sync = timezone.now()
+            self.last_sync_message = 'Exception: %s' % e
         self.save()
 
 
