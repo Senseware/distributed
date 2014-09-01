@@ -229,7 +229,7 @@ class DistributedSourceModel(models.Model):
         if not cls:
             self.last_sync = timezone.now()
             self.last_sync_message = 'Failed - model not defined in settings.DISTRIBUTED_MODELS'
-            self.save(audit=False)
+            self.save()
             return
         try:
             # list
@@ -253,7 +253,7 @@ class DistributedSourceModel(models.Model):
         except Exception, e:
             self.last_sync = timezone.now()
             self.last_sync_message = 'Exception: %s' % e
-        self.save(audit=False)
+        self.save()
 
 
 
