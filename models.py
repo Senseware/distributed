@@ -112,7 +112,7 @@ class DistributedMixin(UndeleteMixin):
     def natural_key(self):
         return (self.uuid,)
 
-    def save(self, *args, **kwargs):
+    def save(self, audit=True, *args, **kwargs):
         # uuid
         if not self.uuid:
             self.uuid = uuid.uuid4().hex
@@ -120,7 +120,8 @@ class DistributedMixin(UndeleteMixin):
         if not self.date_created:
             self.date_created = timezone.now()
         # modified
-        self.date_modified = timezone.now()
+        if audit:
+            self.date_modified = timezone.now()
         super(DistributedMixin, self).save(*args, **kwargs)
 
 
