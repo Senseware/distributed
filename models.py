@@ -26,14 +26,14 @@ class UndeleteQuerySet(models.query.QuerySet):
 
 
 class UndeleteManager(models.Manager):
-    def get_queryset(self):
+    def get_query_set(self):
         return UndeleteQuerySet(self.model, using=self._db).filter(date_deleted__isnull=True)
     
     def all_with_deleted(self):
-        return super(UndeleteManager, self).get_queryset()
+        return super(UndeleteManager, self).get_query_set()
     
     def only_deleted(self):
-        return super(UndeleteManager, self).get_queryset().filter(date_deleted__isnull=False)
+        return super(UndeleteManager, self).get_query_set().filter(date_deleted__isnull=False)
     
     def get(self, *args, **kwargs):
         return self.all_with_deleted().get(*args, **kwargs)
@@ -41,7 +41,7 @@ class UndeleteManager(models.Manager):
     def filter(self, *args, **kwargs):
         if "pk" in kwargs:
             return self.all_with_deleted().filter(*args, **kwargs)
-        return self.get_queryset().filter(*args, **kwargs)
+        return self.get_query_set().filter(*args, **kwargs)
 
 
 
