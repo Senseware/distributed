@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime, parse_time
 from django.utils.translation import ugettext_lazy as _
 
+from distributed.fields import UUIDField
 from distributed.utils import unserialize_json
 
 
@@ -98,6 +99,7 @@ class DistributedMixin(UndeleteMixin):
     Assigns a UUID to each record, uses the UUID as natural key.
     """
     uuid                      = models.CharField(max_length=32,       null=False, editable=False, db_index=True,    verbose_name='UUID')
+    #uuid                      = UUIDField(                            null=False, editable=False, db_index=True,    verbose_name='UUID')
     distributed_source        = models.ForeignKey('DistributedSource',null=True,  editable=False, related_name='+', verbose_name='UUID Source')
     date_created              = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Created at'))
     date_modified             = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Modified at'))
@@ -236,14 +238,12 @@ class DistributedSourceModel(models.Model):
                 if not cls.objects.all_with_deleted().filter(uuid=rec['uuid']).exists():
                     obj = cls(uuid=rec['uuid'])
                     obj.distributed_source = self.source
-                    yyy = 'xxxxxxxxxxxxxxxxxxx'
                 else:
                     obj = cls.objects.get(uuid=rec['uuid'])
                 # all fields
                 if (not obj.date_modified) or (obj.date_modified < rec['date_modified']):
                     for key in rec.keys():
                         setattr(obj, key, rec[key])
-                    xxx = obj.id
                     obj.save()
             # done
             self.last_sync = timezone.now()

@@ -53,7 +53,7 @@ def unserialize_json(data, model_class):
 
         # foreign key - lookup based on uuid
         elif issubclass(ForeignKey, field_class.__class__):
-            value = field_class.related_field.model.objects.all_with_deleted().get(uuid=data[field_name])
+            value = field_class.related.parent_model.objects.all_with_deleted().get(uuid=data[field_name])
 
         # done
         data[field_name] = value
