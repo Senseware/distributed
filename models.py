@@ -223,6 +223,7 @@ class DistributedSourceModel(models.Model):
         return data
 
     def sync(self):
+        total = 0
         # model
         cls = self.get_model_class()
         if not cls:
@@ -245,9 +246,10 @@ class DistributedSourceModel(models.Model):
                     for key in rec.keys():
                         setattr(obj, key, rec[key])
                     obj.save()
+                    total += 1
             # done
             self.last_sync = timezone.now()
-            self.last_sync_message = 'Success'
+            self.last_sync_message = 'Synced %d objects' % total
         except Exception, e:
             self.last_sync = timezone.now()
             self.last_sync_message = 'Exception: %s' % e
