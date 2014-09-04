@@ -101,8 +101,8 @@ class DistributedMixin(UndeleteMixin):
     uuid                      = models.CharField(max_length=32,       null=False, editable=False, db_index=True,    verbose_name='UUID')
     #uuid                      = UUIDField(                            null=False, editable=False, db_index=True,    verbose_name='UUID')
     distributed_source        = models.ForeignKey('DistributedSource',null=True,  editable=False, related_name='+', verbose_name='UUID Source')
-    date_created              = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Created at'))
-    date_modified             = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Modified at'))
+    created_date              = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Created at'))
+    modified_date             = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Modified at'))
 
     objects = DistributedManager()
 
@@ -117,11 +117,11 @@ class DistributedMixin(UndeleteMixin):
         if not self.uuid:
             self.uuid = uuid.uuid4().hex
         # created
-        if not self.date_created:
-            self.date_created = timezone.now()
+        if not self.created_date:
+            self.created_date = timezone.now()
         # modified
         if audit:
-            self.date_modified = timezone.now()
+            self.modified_date = timezone.now()
         super(DistributedMixin, self).save(*args, **kwargs)
 
 
@@ -243,7 +243,7 @@ class DistributedSourceModel(models.Model):
                 else:
                     obj = cls.objects.get(uuid=rec['uuid'])
                 # all fields
-                if (not obj.date_modified) or (obj.date_modified < rec['date_modified']):
+                if (not obj.modified_date) or (obj.modified_date < rec['modified_date']):
                     for key in rec.keys():
                         setattr(obj, key, rec[key])
                     obj.save(audit=False)
