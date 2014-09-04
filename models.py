@@ -101,8 +101,8 @@ class DistributedMixin(UndeleteMixin):
     uuid                      = models.CharField(max_length=32,       null=False, editable=False, db_index=True,    verbose_name='UUID')
     #uuid                      = UUIDField(                            null=False, editable=False, db_index=True,    verbose_name='UUID')
     distributed_source        = models.ForeignKey('DistributedSource',null=True,  editable=False, related_name='+', verbose_name='UUID Source')
-    created_date              = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Created at'))
-    modified_date             = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Modified at'))
+#    created_date              = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Created at'))
+#    modified_date             = models.DateTimeField(                 null=False, editable=False, verbose_name=_('Modified at'))
 
     objects = DistributedManager()
 
@@ -117,11 +117,11 @@ class DistributedMixin(UndeleteMixin):
         if not self.uuid:
             self.uuid = uuid.uuid4().hex
         # created
-        if not self.created_date:
-            self.created_date = timezone.now()
+#        if not self.created_date:
+#            self.created_date = timezone.now()
         # modified
-        if audit:
-            self.modified_date = timezone.now()
+#        if audit:
+#            self.modified_date = timezone.now()
         super(DistributedMixin, self).save(*args, **kwargs)
 
 
